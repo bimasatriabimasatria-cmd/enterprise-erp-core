@@ -16,7 +16,16 @@ type ItemInput struct {
 	Stock       int     `json:"stock"`
 }
 
-// Tambah Barang Baru
+// CreateItem membuat barang baru
+// @Summary Tambah barang ke gudang
+// @Description Memasukkan barang baru ke dalam sistem, otomatis terikat dengan Tenant ID user
+// @Tags Inventory & Warehouse
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer TOKEN_JWT_KAMU"
+// @Param request body map[string]interface{} true "Format JSON Barang"
+// @Success 201 {object} map[string]interface{}
+// @Router /api/items [post]
 func CreateItem(c *fiber.Ctx) error {
 	// Ambil identitas perusahaan dari Satpam (Middleware)
 	tenantID := c.Locals("tenant_id").(string)

@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+server
 
 # File konfigurasi rahasia
 .env
@@ -13,3 +14,9 @@ vendor/
 
 # File sistem operasi
 .DS_Store
+
+# Folder Data Database Docker (Wajib!)
+pgdata/
+
+# Log Sampah
+*.log

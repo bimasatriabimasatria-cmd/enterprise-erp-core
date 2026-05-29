@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  # 1. KONTAINER DATABASE
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: rahasia_docker
+      POSTGRES_DB: erp_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data # Agar data tidak hilang saat kontainer dimatikan
+
+  # 2. KONTAINER API ERP ANDA
+  api:
+    build: .
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      # Kita arahkan koneksi ke kontainer 'db', BUKAN ke localhost lagi!
+      - DATABASE_URL=host=db user=postgres password=rahasia_docker dbname=erp_db port=5432 sslmode=disable TimeZone=Asia/Jakarta
+    depends_on:
+      - db # API tidak akan menyala sebelum Database siap
+
+# Membuat media penyimpanan permanen
+volumes:
+  pgdata:

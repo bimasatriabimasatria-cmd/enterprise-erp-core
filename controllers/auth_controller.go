@@ -23,7 +23,7 @@ type RegisterInput struct {
 
 func Register(c *fiber.Ctx) error {
 	var input RegisterInput
-	
+
 	// Tangkap data dari permintaan pengguna
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Format data tidak valid"})
@@ -57,6 +57,15 @@ type LoginInput struct {
 	Password string `json:"password"`
 }
 
+// Login autentikasi pengguna
+// @Summary Login ke dalam sistem
+// @Description Memvalidasi email dan password untuk mendapatkan Token JWT
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body map[string]string true "Format JSON untuk Login"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/auth/login [post]
 func Login(c *fiber.Ctx) error {
 	var input LoginInput
 	if err := c.BodyParser(&input); err != nil {

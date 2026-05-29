@@ -1,3 +1,17 @@
+// @title Enterprise ERP API
+// @version 1.0
+// @description Sistem ERP Komprehensif (Multi-Tenant, HR, Finance, Manufacturing).
+// @termsOfService http://swagger.io/terms/
+// @contact.name Tim Developer ERP
+// @contact.email support@enterprise-erp.com
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+// @host localhost:3000
+// @BasePath /
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
+
 package main
 
 import (
@@ -9,8 +23,11 @@ import (
 	"enterprise-erp/middlewares"
 	"enterprise-erp/routes" // Import jalur API kita
 
+	_ "enterprise-erp/docs" // WAJIB ADA: Mengimpor hasil generate Swagger
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"github.com/gofiber/swagger"
 )
 
 func main() {
@@ -47,6 +64,9 @@ func main() {
 			"message": "Sistem ERP Core Engine Berjalan Normal",
 		})
 	})
+
+	// Rute Halaman Dokumentasi Swagger
+	app.Get("/swagger/*", swagger.HandlerDefault)
 
 	// Pendaftaran Semua Rute (Ganti 'app' menjadi 'apiGroup' kecuali Auth karena dia mendaftarkan API sendiri di dalamnya)
 	routes.AuthRoutes(app) // Auth tetap pakai app agar CCTV tidak merekam password salah berulang

@@ -1,0 +1,75 @@
+basePath: /
+host: localhost:3000
+info:
+  contact:
+    email: support@enterprise-erp.com
+    name: Tim Developer ERP
+  description: Sistem ERP Komprehensif (Multi-Tenant, HR, Finance, Manufacturing).
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Enterprise ERP API
+  version: "1.0"
+paths:
+  /api/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Memvalidasi email dan password untuk mendapatkan Token JWT
+      parameters:
+      - description: Format JSON untuk Login
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Login ke dalam sistem
+      tags:
+      - Authentication
+  /api/items:
+    post:
+      consumes:
+      - application/json
+      description: Memasukkan barang baru ke dalam sistem, otomatis terikat dengan
+        Tenant ID user
+      parameters:
+      - description: Bearer TOKEN_JWT_KAMU
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Format JSON Barang
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Tambah barang ke gudang
+      tags:
+      - Inventory & Warehouse
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

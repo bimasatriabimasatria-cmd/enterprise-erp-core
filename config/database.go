@@ -6,8 +6,7 @@ import (
 
 	"enterprise-erp/models"
 
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"golang.org/x/crypto/bcrypt"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -54,6 +53,10 @@ func ConnectDB() {
 	log.Println("Koneksi Database Berhasil!")
 	DB = db
 
+	// === TAMBAHKAN BARIS INI UNTUK MERESET TOTAL DATABASE ===
+	//db.Exec("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
+	// =========================================================
+
 	// UPDATE: Menambahkan models.User{} untuk migrasi
 	err = db.AutoMigrate(
 		&models.Tenant{},
@@ -90,6 +93,19 @@ func ConnectDB() {
 	log.Println("Migrasi tabel Tenant dan User berhasil!")
 
 	db.Exec(`INSERT INTO tenants (id, name, domain) VALUES ('550e8400-e29b-41d4-a716-446655440000', 'PT Enterprise Sejahtera', 'enterprise.com') ON CONFLICT (domain) DO NOTHING`)
+
+	// === TAMBAHKAN PEMBUATAN ADMIN OTOMATIS DI SINI ===
+	// 1. Kita buat password "admin123" yang diacak (hash) demi keamanan
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("admin123"), 10)
+
+	// 2. Masukkan akun Super Admin ke database dan kaitkan dengan Tenant di atas
+	db.Exec(`
+		INSERT INTO users (id, tenant_id, name, email, password, role) 
+		VALUES (gen_random_uuid(), '550e8400-e29b-41d4-a716-446655440000', 'Super Admin', 'admin@enterprise.com', ?, 'admin') 
+		ON CONFLICT (email) DO NOTHING
+	`, string(hashedPassword))
+
+	log.Println("Akun Super Admin berhasil disiapkan!")
 
 	DB = db
 }
