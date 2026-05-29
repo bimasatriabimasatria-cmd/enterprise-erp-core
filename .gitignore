@@ -1,0 +1,15 @@
+# File eksekusi (Hasil Compile)
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# File konfigurasi rahasia
+.env
+
+# Folder instalasi Golang
+vendor/
+
+# File sistem operasi
+.DS_Store

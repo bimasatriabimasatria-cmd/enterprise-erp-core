@@ -1,0 +1,821 @@
+### ==========================================
+### TAHAP 1: REGISTRASI & LOGIN
+### ==========================================
+
+### A. REGISTER (Hanya diklik SATU KALI seumur hidup untuk email ini)
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+    "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Budi Direktur",
+    "email": "budi.super@erp.com",
+    "password": "rahasia123",
+    "role": "admin"
+}
+
+
+### B. LOGIN (Klik ini setiap kali token kedaluwarsa atau server baru dinyalakan)
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "budi.super@erp.com",
+    "password": "rahasia123"
+}
+
+### ==========================================
+### TAHAP 2: TEMPELKAN TOKEN DI SINI
+### ==========================================
+# Hapus teks 'TEMPEL_TOKEN_DI_SINI' dan ganti dengan token dari hasil Login.
+# Ingat: Jangan pakai tanda kutip, cukup paste teks panjangnya saja.
+
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3ODAwNzkzMzYsInJvbGUiOiJhZG1pbiIsInRlbmFudF9pZCI6IjU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMCIsInVzZXJfaWQiOiI4Mjc4ZjcwMi0wOGIyLTRjYzUtYTg0YS03MzVjNzMyOGNmY2IifQ._X6pNp9GSjB2LwunZtcYervBD-PPg_lUpWp1yjsPdDQ
+
+### ==========================================
+### TAHAP 3: TAMBAH BARANG GUDANG
+### ==========================================
+POST http://localhost:3000/api/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "sku": "LAP-ASUS-001",
+    "name": "Laptop Asus ROG 2026",
+    "description": "Laptop Gaming Super Cepat",
+    "price": 15000000,
+    "stock": 10
+}
+
+
+### ==========================================
+### TAHAP 4: CEK DAFTAR BARANG
+### ==========================================
+# Klik ini untuk melihat daftar barang sekaligus menyalin "ID" barang tersebut.
+GET http://localhost:3000/api/items
+Authorization: Bearer {{token}}
+
+
+### ==========================================
+### TAHAP 5: UJI OTOMATISASI FAKTUR PENJUALAN
+### ==========================================
+# Hapus teks 'TEMPEL_ID_BARANG_DI_SINI' dan ganti dengan ID barang dari Tahap 4.
+# Kita akan mencoba membeli 2 buah laptop.
+
+POST http://localhost:3000/api/invoices
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "invoice_number": "INV-2026-001",
+    "customer_name": "Toko Maju Jaya",
+    "date": "2026-05-29",
+    "lines": [
+        {
+            "item_id": "4f425d55-c900-4f8a-92f6-43fcf9acd711",
+            "quantity": 2
+        }
+    ]
+}
+
+
+### ==========================================
+### TAHAP 6: CEK STOK TERAKHIR (PEMBUKTIAN)
+### ==========================================
+# Klik ini untuk membuktikan bahwa stok laptop berkurang otomatis.
+GET http://localhost:3000/api/items
+Authorization: Bearer {{token}}
+
+### ==========================================
+### TAHAP 7: BUAT PESANAN PEMBELIAN (PO)
+### ==========================================
+# Ganti 'TEMPEL_ID_BARANG_DI_SINI' dengan ID barang yang sama seperti tahap sebelumnya.
+# Kita memesan 20 laptop dengan harga modal 12.000.000
+
+POST http://localhost:3000/api/pos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "po_number": "PO-2026-001",
+    "supplier_name": "Pabrik Asus Taiwan",
+    "date": "2026-05-30",
+    "lines": [
+        {
+            "item_id": "4f425d55-c900-4f8a-92f6-43fcf9acd711",
+            "quantity": 20,
+            "unit_price": 12000000
+        }
+    ]
+}
+
+
+### ==========================================
+### TAHAP 8: CEK DAFTAR PO UNTUK AMBIL ID
+### ==========================================
+# Klik ini untuk melihat daftar PO yang baru dibuat.
+# Salin "ID" milik PO tersebut (Bukan ID barang, tapi ID PO-nya).
+
+GET http://localhost:3000/api/pos
+Authorization: Bearer {{token}}
+
+
+### ==========================================
+### TAHAP 9: TERIMA BARANG DI GUDANG
+### ==========================================
+# Ganti teks 'TEMPEL_ID_PO_DI_SINI' di URL bawah ini dengan ID dari Tahap 8.
+# Jika sukses di-klik, sistem akan memproses penambahan stok.
+
+POST http://localhost:3000/api/pos/ce08f5a6-2250-4009-91a4-ecd8fb3e8acd/receive
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+
+### ==========================================
+### TAHAP 10: CEK STOK (PEMBUKTIAN)
+### ==========================================
+# Stok Anda sekarang harus menjadi 28!
+GET http://localhost:3000/api/items
+Authorization: Bearer {{token}}
+
+### ==========================================
+### TAHAP 11: BUAT BUKU AKUNTANSI SYARAT PENJUALAN
+### ==========================================
+# Klik Send Request pada DUA akun di bawah ini agar ERP mengenali kode akun standar.
+
+# Buat Akun Piutang (Tagihan ke Pelanggan)
+POST http://localhost:3000/api/accounts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "account_code": "1120",
+    "account_name": "Piutang Usaha",
+    "account_type": "asset"
+}
+
+###
+
+# Buat Akun Pendapatan
+POST http://localhost:3000/api/accounts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "account_code": "4100",
+    "account_name": "Pendapatan Penjualan",
+    "account_type": "revenue"
+}
+
+
+### ==========================================
+### TAHAP 12: UJI COBA KEAJAIBAN ERP (AUTO-JOURNAL)
+### ==========================================
+# Ambil ID Barang (Laptop) dari tahap-tahap sebelumnya, ganti di bawah ini.
+# Kita jual 3 buah laptop ke PT Makmur Sejahtera.
+
+POST http://localhost:3000/api/invoices
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "invoice_number": "INV-2026-002",
+    "customer_name": "PT Makmur Sejahtera",
+    "date": "2026-05-31",
+    "lines": [
+        {
+            "item_id": "4f425d55-c900-4f8a-92f6-43fcf9acd711",
+            "quantity": 3
+        }
+    ]
+}
+
+
+### ==========================================
+### TAHAP 13: BUKTIKAN BUKU BESAR (FINANCE) TERISI OTOMATIS
+### ==========================================
+# Lihat jurnal keuangan paling atas. Anda akan melihat jurnal baru 
+# tanpa ada satupun staf akunting yang mengetiknya!
+
+GET http://localhost:3000/api/journals
+Authorization: Bearer {{token}}
+
+### ==========================================
+### TAHAP 14: CARI ID FAKTUR YANG BELUM LUNAS
+### ==========================================
+# Klik Send Request untuk melihat daftar Faktur.
+# Cari Faktur "INV-2026-002" yang statusnya masih "unpaid".
+# Salin "ID" faktur tersebut.
+
+GET http://localhost:3000/api/invoices
+Authorization: Bearer {{token}}
+
+
+### ==========================================
+### TAHAP 15: TERIMA PEMBAYARAN DARI PELANGGAN
+### ==========================================
+# Hapus teks 'TEMPEL_ID_FAKTUR_DI_SINI' dan ganti dengan ID dari Tahap 14.
+# Kita akan mencairkan Rp 45.000.000 ke rekening bank.
+
+POST http://localhost:3000/api/payments/receive
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "receipt_number": "PAY-2026-001",
+    "invoice_id": "a8109b73-ff36-43ce-945e-c8dd20446995",
+    "payment_date": "2026-06-01"
+}
+
+
+### ==========================================
+### TAHAP 16: LIHAT BUKU BESAR TERBARU (PEMBUKTIAN)
+### ==========================================
+# Cek jurnal keuangan Anda. Anda akan melihat jurnal baru 
+# di mana uang di Kas Bank BCA bertambah (Debit) dan Piutang berkurang (Kredit).
+
+GET http://localhost:3000/api/journals
+Authorization: Bearer {{token}}
+
+### ==========================================
+### TAHAP 17: BUAT BUKU AKUNTANSI BIAYA GAJI
+### ==========================================
+# Sebelum menggaji, kita wajib membuat buku "Beban Gaji" (Tipe Expense) di akuntansi.
+
+POST http://localhost:3000/api/accounts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "account_code": "5100",
+    "account_name": "Beban Gaji & Upah",
+    "account_type": "expense"
+}
+
+
+### ==========================================
+### TAHAP 18: TAMBAH KARYAWAN BARU
+### ==========================================
+# Mendaftarkan Andi sebagai Manajer dengan Gaji Pokok Rp 10.000.000
+
+POST http://localhost:3000/api/hr/employees
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "nik": "EMP-2026-001",
+    "name": "Andi Manajer",
+    "position": "General Manager",
+    "basic_salary": 10000000,
+    "hire_date": "2026-01-01"
+}
+
+
+### ==========================================
+### TAHAP 19: CEK DAFTAR KARYAWAN
+### ==========================================
+# Klik untuk melihat daftar karyawan. 
+# Salin "ID" milik Andi Manajer.
+
+GET http://localhost:3000/api/hr/employees
+Authorization: Bearer {{token}}
+
+
+### ==========================================
+### TAHAP 20: CAIRKAN GAJI (PROCESS PAYROLL)
+### ==========================================
+# Ganti 'TEMPEL_ID_KARYAWAN_DI_SINI' dengan ID dari Tahap 19.
+# Kita beri bonus (allowance) 2 juta, dan potongan telat (deduction) 500 ribu.
+
+POST http://localhost:3000/api/hr/payroll
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "employee_id": "219e321a-4a43-4e47-88ee-efe2012b24e2",
+    "period": "2026-05",
+    "allowances": 20000000,
+    "deductions": 500000,
+    "payment_date": "2026-05-29"
+}
+
+
+### ==========================================
+### TAHAP 21: BUKTIKAN UANG BANK BERKURANG
+### ==========================================
+# Lihat Jurnal Akuntansi. Akan ada jurnal otomatis baru yang mencatat:
+# Beban Gaji (Debit) bertambah, dan Kas Bank (Kredit) berkurang 
+# karena uangnya sudah ditransfer ke Andi!
+
+GET http://localhost:3000/api/journals
+Authorization: Bearer {{token}}
+
+### ==========================================
+### TAHAP 22: TAMBAH CALON PELANGGAN (LEAD)
+### ==========================================
+# Tim Sales baru saja menelepon Bapak Budi dari PT Inovasi Maju.
+
+POST http://localhost:3000/api/crm/leads
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "name": "Bapak Budi",
+    "company": "PT Inovasi Maju",
+    "email": "budi@inovasi.com",
+    "phone": "08123456789"
+}
+
+
+### ==========================================
+### TAHAP 23: CEK DAFTAR LEAD
+### ==========================================
+# Klik untuk melihat prospek kita.
+# Salin "ID" milik PT Inovasi Maju.
+
+GET http://localhost:3000/api/crm/leads
+Authorization: Bearer {{token}}
+
+
+### ==========================================
+### TAHAP 24: KONVERSI LEAD JADI CUSTOMER
+### ==========================================
+# Ganti 'TEMPEL_ID_LEAD_DI_SINI' dengan ID dari Tahap 23.
+# Ceritanya PT Inovasi Maju setuju untuk beli produk kita!
+
+POST http://localhost:3000/api/crm/leads/980d4203-0df2-4432-9382-34906dc065ea/convert
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+
+### ==========================================
+### TAHAP 25: BUKTIKAN DI MASTER PELANGGAN
+### ==========================================
+# Cek Daftar Customer Resmi. PT Inovasi Maju sekarang otomatis 
+# sudah masuk ke tabel Customer siap untuk dibuatkan Faktur!
+
+GET http://localhost:3000/api/crm/customers
+Authorization: Bearer {{token}}
+
+### ==========================================
+### TAHAP 26: LIHAT LAPORAN LABA RUGI (DASHBOARD DIREKTUR)
+### ==========================================
+# Klik Send Request untuk melihat performa finansial perusahaan Anda.
+# Sistem akan otomatis menghitung semua faktur penjualan yang sudah dibuat 
+# dan menguranginya dengan semua gaji karyawan yang sudah dibayar!
+
+GET http://localhost:3000/api/reports/income-statement
+Authorization: Bearer {{token}}
+
+### ==========================================
+### TAHAP 27: UJI COBA LOGIN SEBAGAI STAF BIASA
+### ==========================================
+# Kita buat akun baru untuk staf gudang bernama Joko.
+# Perhatikan bahwa "role" miliknya adalah "staff", bukan "admin".
+
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+    "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Joko Staf Gudang",
+    "email": "joko.gudang@erp.com",
+    "password": "rahasia_joko",
+    "role": "staff"
+}
+
+### (Langsung Login sebagai Joko dan Salin Token-nya)
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "joko.gudang@erp.com",
+    "password": "rahasia_joko"
+}
+
+
+### ==========================================
+### TAHAP 28: TEMPEL TOKEN JOKO DI SINI
+### ==========================================
+@tokenJoko = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3ODAwNzk0MDEsInJvbGUiOiJzdGFmZiIsInRlbmFudF9pZCI6IjU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMCIsInVzZXJfaWQiOiI3N2Y2MDZlMy1hNzNjLTQxZTQtODQwOC1kMmVmM2YyODU3YmYifQ.KF0mjCtAFDnkQ2rmEvHD8CqxeXRR-8a-pDyFXvdvdRk
+
+
+### ==========================================
+### TAHAP 29: JOKO MENCOBA MELIHAT LABA RUGI PERUSAHAAN
+### ==========================================
+# Joko secara diam-diam mencoba mengakses menu Direktur.
+
+GET http://localhost:3000/api/reports/income-statement
+Authorization: Bearer {{tokenJoko}}
+
+### ==========================================
+### TAHAP 30: LAKUKAN AKTIVITAS APAPUN SEBAGAI KARYAWAN
+### ==========================================
+# Kita coba buat barang baru secara acak agar terekam oleh CCTV
+
+POST http://localhost:3000/api/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "sku": "MOUSE-001",
+    "name": "Mouse Wireless",
+    "price": 150000,
+    "stock": 100
+}
+
+
+### ==========================================
+### TAHAP 31: DIREKTUR MEMERIKSA REKAMAN CCTV (AUDIT LOG)
+### ==========================================
+# Kita lihat apakah aktivitas penambahan Mouse di atas diam-diam dicatat oleh sistem!
+
+GET http://localhost:3000/api/audit/logs
+Authorization: Bearer {{token}}
+
+### ==========================================
+### TAHAP 32: AMBIL ID KARYAWAN (ANDI MANAJER)
+### ==========================================
+# Klik ini untuk mendapatkan ID Andi Manajer yang pernah kita buat.
+# Salin "ID" miliknya.
+
+GET http://localhost:3000/api/hr/employees
+Authorization: Bearer {{token}}
+
+
+### ==========================================
+### TAHAP 33: SIMULASI ANDI TERLAMBAT (ABSEN MASUK)
+### ==========================================
+# Ganti 'TEMPEL_ID_ANDI_DI_SINI' dengan ID Andi.
+# Ceritanya Andi datang jam 10 Pagi (Format T10:30:00Z).
+# Sistem harus mendeteksi statusnya otomatis menjadi "late".
+
+POST http://localhost:3000/api/attendance/clock-in
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "employee_id": "219e321a-4a43-4e47-88ee-efe2012b24e2",
+    "time": "2026-05-29T10:30:00Z"
+}
+
+
+### ==========================================
+### TAHAP 34: SIMULASI ANDI PULANG KERJA (CLOCK OUT)
+### ==========================================
+# Di sore hari jam 17:00, Andi melakukan absen pulang.
+
+POST http://localhost:3000/api/attendance/clock-out
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "employee_id": "219e321a-4a43-4e47-88ee-efe2012b24e2",
+    "time": "2026-05-29T17:00:00Z"
+}
+
+
+### ==========================================
+### TAHAP 35: HRD MELIHAT REKAP ABSENSI
+### ==========================================
+# Klik ini untuk melihat bukti bahwa sistem berhasil mencatat Andi "late" 
+# dan merekam durasi kerjanya hari itu.
+
+GET http://localhost:3000/api/attendance
+Authorization: Bearer {{token}}
+
+### ==========================================
+### TAHAP 36: BUAT 2 LOKASI GUDANG
+### ==========================================
+# Kita buat Gudang Jakarta dan Gudang Bekasi
+
+POST http://localhost:3000/api/warehouses
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "code": "GDG-JKT",
+    "name": "Gudang Pusat Jakarta",
+    "location": "Jl. Sudirman, Jakarta"
+}
+
+### (Klik Send Request pada blok di atas, lalu blok di bawah ini)
+
+POST http://localhost:3000/api/warehouses
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "code": "GDG-BKS",
+    "name": "Gudang Cabang Bekasi",
+    "location": "Kawasan Industri, Bekasi"
+}
+
+
+### ==========================================
+### TAHAP 37: CEK ID GUDANG & ID BARANG
+### ==========================================
+# Klik untuk mendapatkan ID Gudang Jakarta dan ID Gudang Bekasi
+GET http://localhost:3000/api/warehouses
+Authorization: Bearer {{token}}
+
+### (Ambil ID Barang Laptop/Mouse dari sini jika Anda lupa)
+GET http://localhost:3000/api/items
+Authorization: Bearer {{token}}
+
+
+### ==========================================
+### TAHAP 38: MASUKKAN STOK AWAL KE GUDANG JAKARTA
+### ==========================================
+# Ganti ID Gudang dengan ID Gudang Jakarta, dan Item ID dengan ID Laptop/Mouse
+# Ceritanya kita meletakkan 50 unit barang di Jakarta
+
+POST http://localhost:3000/api/warehouses/inventory
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "warehouse_id": "4b643521-a2c3-443a-9907-9560f7a9d287",
+    "item_id": "4f425d55-c900-4f8a-92f6-43fcf9acd711",
+    "quantity": 50
+}
+
+
+### ==========================================
+### TAHAP 39: LAKUKAN MUTASI (TRANSFER) KE BEKASI
+### ==========================================
+# Hari ini kita mengirim 20 unit dari Jakarta ke Cabang Bekasi!
+
+POST http://localhost:3000/api/warehouses/transfer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "reference": "TRF-2026-001",
+    "source_id": "4b643521-a2c3-443a-9907-9560f7a9d287",
+    "destination_id": "556e9ab6-018a-4dad-82e8-380da01593bc",
+    "item_id": "4f425d55-c900-4f8a-92f6-43fcf9acd711",
+    "quantity": 20
+}
+
+
+### ==========================================
+### TAHAP 40: BUKTIKAN PERGERAKAN STOK
+### ==========================================
+# Lihat laporannya. Anda akan melihat barang tersebut sekarang terpecah:
+# 30 unit di Jakarta, dan 20 unit di Bekasi!
+
+GET http://localhost:3000/api/warehouses/inventory
+Authorization: Bearer {{token}}
+
+### ==========================================
+### TAHAP 41: JOKO (STAF) MENGAJUKAN PERSETUJUAN
+### ==========================================
+# Pastikan {{tokenJoko}} adalah token milik Joko (Role: staff)
+# Joko ingin membeli mesin pabrik seharga 1 Miliar (PO-MESIN-001)
+
+POST http://localhost:3000/api/workflow/request
+Authorization: Bearer {{tokenJoko}}
+Content-Type: application/json
+
+{
+    "document_type": "PurchaseOrder",
+    "document_id": "PO-MESIN-001",
+    "notes": "Pak, kita butuh mesin baru seharga 1 Miliar untuk pabrik Bekasi."
+}
+
+
+### ==========================================
+### TAHAP 42: JOKO MENCOBA MELIHAT DAFTAR PERSETUJUAN (GAGAL)
+### ==========================================
+# Joko iseng mencoba melihat antrean persetujuan manajer.
+# Sistem harus menolak dengan pesan "403 Forbidden".
+
+GET http://localhost:3000/api/workflow/pending
+Authorization: Bearer {{tokenJoko}}
+
+
+### ==========================================
+### TAHAP 43: BUDI (DIREKTUR) MELIHAT ANTREAN
+### ==========================================
+# Sekarang kita pakai {{token}} milik Budi (Role: admin).
+# Budi melihat ada pengajuan dari Joko. Salin "ID" approval tersebut!
+
+GET http://localhost:3000/api/workflow/pending
+Authorization: Bearer {{token}}
+
+
+### ==========================================
+### TAHAP 44: BUDI (DIREKTUR) MENYETUJUI PENGAJUAN
+### ==========================================
+# Ganti 'TEMPEL_ID_APPROVAL_DI_SINI' dengan ID dari Tahap 43.
+# Budi menekan tombol Approve dan memberikan catatan.
+
+POST http://localhost:3000/api/workflow/0fe6a253-9140-4641-a4de-9dc03432357b/process
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "status": "approved",
+    "notes": "Baik, segera proses pembeliannya. Anggaran sudah disiapkan."
+}
+
+### ==========================================
+### TAHAP 45: BUAT MASTER BARANG MENTAH & BARANG JADI
+### ==========================================
+# Kita daftarkan Kayu, Paku, dan Meja ke database. (Klik Send 3 kali berurutan)
+
+POST http://localhost:3000/api/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "sku": "RAW-KAYU", "name": "Papan Kayu Jati", "price": 50000, "stock": 0 }
+###
+POST http://localhost:3000/api/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "sku": "RAW-PAKU", "name": "Paku Baja", "price": 500, "stock": 0 }
+###
+POST http://localhost:3000/api/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "sku": "FG-MEJA", "name": "Meja Jati Premium", "price": 500000, "stock": 0 }
+
+### (CEK ID BARANG: Ambil ID Kayu, Paku, dan Meja dari rute GET Items)
+GET http://localhost:3000/api/items
+Authorization: Bearer {{token}}
+
+
+### ==========================================
+### TAHAP 46: SIAPKAN STOK MENTAH DI GUDANG BEKASI
+### ==========================================
+# Kita butuh bahan baku. Masukkan 100 Kayu dan 500 Paku ke Gudang Bekasi!
+# (Ambil ID Gudang Bekasi dari Tahap 37 yang lama, lalu ganti di bawah ini)
+
+POST http://localhost:3000/api/warehouses/inventory
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "warehouse_id": "556e9ab6-018a-4dad-82e8-380da01593bc", "item_id": "74b09fa0-58a5-4f13-ac49-738f4997e7b2", "quantity": 100 }
+###
+POST http://localhost:3000/api/warehouses/inventory
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "warehouse_id": "556e9ab6-018a-4dad-82e8-380da01593bc", "item_id": "ca149bbc-54d7-427d-9390-b6702bc3736b", "quantity": 500 }
+
+
+### ==========================================
+### TAHAP 47: BUAT RESEP BOM (BILL OF MATERIALS)
+### ==========================================
+# Resep: 1 Meja = 2 Kayu + 10 Paku
+
+POST http://localhost:3000/api/manufacturing/bom
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "code": "BOM-MEJA-01",
+    "name": "Resep Meja Jati Standar",
+    "item_id": "a5b28681-f5cb-4631-a6e4-472d2ce32144",
+    "components": [
+        { "material_id": "74b09fa0-58a5-4f13-ac49-738f4997e7b2", "quantity": 2 },
+        { "material_id": "ca149bbc-54d7-427d-9390-b6702bc3736b", "quantity": 10 }
+    ]
+}
+
+
+### ==========================================
+### TAHAP 48: PERINTAHKAN PABRIK MEMBUAT 5 MEJA
+### ==========================================
+# Ganti ID BOM dan Gudang. Kita mau rakit 5 Meja! (Salin ID Production Order dari jawaban)
+
+POST http://localhost:3000/api/manufacturing/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "order_number": "PRD-2026-001",
+    "bom_id": "a1d710b5-3574-4f5f-a659-98b1b82ab89e",
+    "warehouse_id": "556e9ab6-018a-4dad-82e8-380da01593bc",
+    "target_quantity": 5,
+    "start_date": "2026-05-30"
+}
+
+
+### ==========================================
+### TAHAP 49: EKSEKUSI PRODUKSI SELESAI
+### ==========================================
+# Ganti ID di URL ini dengan ID Production Order dari Tahap 48.
+
+POST http://localhost:3000/api/manufacturing/orders/d3273d16-011f-4e57-ae50-c93f7ad1cf65/complete
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+
+### ==========================================
+### TAHAP 50: BUKTIKAN HASIL SULAP PABRIK!
+### ==========================================
+# Cek inventaris gudang Anda. Anda akan melihat:
+# - Papan Kayu tersisa 90 (100 - (5x2))
+# - Paku tersisa 450 (500 - (5x10))
+# - Meja Jati BERTAMBAH 5 Unit dari ketiadaan!
+
+GET http://localhost:3000/api/warehouses/inventory
+Authorization: Bearer {{token}}
+
+### ==========================================
+### TAHAP 51: UNGGAH FILE MUTASI BANK (CSV)
+### ==========================================
+# Ini adalah simulasi file CSV mutasi bank. Perhatikan baris tanggal dan nominal.
+# Ingat di Tahap 15, ada pelanggan mentransfer Rp 45.000.000 (45 Juta) ke kita!
+
+POST http://localhost:3000/api/finance/reconciliation/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=ERPBoundary123
+
+--ERPBoundary123
+Content-Disposition: form-data; name="file"; filename="mutasi_bca.csv"
+Content-Type: text/csv
+
+2026-06-01,Transfer dari PT Makmur Sejahtera,45000000
+2026-06-02,Biaya Admin Bank Bulanan,-15000
+--ERPBoundary123--
+
+
+### ==========================================
+### TAHAP 52: CEK STATUS HASIL UNGGAH 
+### ==========================================
+# Kita lihat data mutasinya. Salin "ID" Statement (Kepala Mutasi).
+# Saat ini statusnya pasti masih "unreconciled" (Belum dicocokkan)
+
+GET http://localhost:3000/api/finance/reconciliation
+Authorization: Bearer {{token}}
+
+
+### ==========================================
+### TAHAP 53: JALANKAN MESIN PENCOCOK OTOMATIS!
+### ==========================================
+# Ganti 'TEMPEL_ID_STATEMENT_DI_SINI' dengan ID dari Tahap 52.
+# Sistem akan otomatis mencari pembayaran Rp 45.000.000 di ERP Anda 
+# dan menyambungkannya dengan catatan bank ini!
+
+POST http://localhost:3000/api/finance/reconciliation/9bc0f323-d44d-421a-83c7-fc59b7f094c8/auto-match
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+### ==========================================
+### TAHAP 54: PELANGGAN REGISTRASI KE PORTAL
+### ==========================================
+# Budi dari PT Inovasi Maju mendaftarkan akun di portal.
+# Perhatikan role-nya adalah "customer", dan email-nya harus sama dengan 
+# email yang terdaftar di CRM (budi@inovasi.com).
+
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+    "tenant_id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Budi Portal",
+    "email": "budi@inovasi.com",
+    "password": "rahasia_budi",
+    "role": "customer"
+}
+
+### (Langsung Login sebagai Pelanggan untuk mengambil Token-nya)
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "budi@inovasi.com",
+    "password": "rahasia_budi"
+}
+
+
+### ==========================================
+### TAHAP 55: SIMPAN TOKEN PELANGGAN
+### ==========================================
+# Salin token dari Tahap 54 dan tempel di bawah ini:
+@tokenCustomer = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3ODAxMDQxNzEsInJvbGUiOiJjdXN0b21lciIsInRlbmFudF9pZCI6IjU1MGU4NDAwLWUyOWItNDFkNC1hNzE2LTQ0NjY1NTQ0MDAwMCIsInVzZXJfaWQiOiI1NjkzNzBiYi00Y2YyLTQ4MjAtOGJkMC0zYWM0Y2FkOWMzZDQifQ.KI2zyXt-FuYZFeeFKL3oU3CUnFKe9LK4-bUL379rn84
+
+
+### ==========================================
+### TAHAP 56: PELANGGAN MENGECEK TAGIHAN MEREKA SENDIRI
+### ==========================================
+# Saat pelanggan mengakses portal, sistem akan menolak jika emailnya salah.
+# Jika benar, sistem HANYA menampilkan faktur milik PT Inovasi Maju!
+
+GET http://localhost:3000/api/portal/customer/invoices
+Authorization: Bearer {{tokenCustomer}}
+
+
+### ==========================================
+### TAHAP 57: UJI COBA KEAMANAN (PELANGGAN MENYUSUP KE LAPORAN LABA RUGI)
+### ==========================================
+# Pelanggan iseng mencoba melihat Laba Rugi rahasia perusahaan Anda.
+# Sistem wajib menamparnya dengan pesan "403 Forbidden"!
+
+GET http://localhost:3000/api/reports/income-statement
+Authorization: Bearer {{tokenCustomer}}
