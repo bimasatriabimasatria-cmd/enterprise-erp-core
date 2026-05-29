@@ -117,7 +117,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:3000",
+	Host:             "enterpriseerpapi-u7w0kgyd.b4a.run",
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Enterprise ERP API",

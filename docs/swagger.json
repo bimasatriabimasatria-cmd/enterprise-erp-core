@@ -14,7 +14,7 @@
         },
         "version": "1.0"
     },
-    "host": "localhost:3000",
+    "host": "enterpriseerpapi-u7w0kgyd.b4a.run",
     "basePath": "/",
     "paths": {
         "/api/auth/login": {
