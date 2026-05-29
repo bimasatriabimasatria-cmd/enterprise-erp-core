@@ -810,6 +810,7 @@ Content-Type: application/json
 GET http://localhost:3000/api/portal/customer/invoices
 Authorization: Bearer {{tokenCustomer}}
 
+postgresql://postgres.blpzybfdfmsqzhwmerrr:dvouSLk7V2zV755t@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres
 
 ### ==========================================
 ### TAHAP 57: UJI COBA KEAMANAN (PELANGGAN MENYUSUP KE LAPORAN LABA RUGI)

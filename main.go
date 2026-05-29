@@ -11,7 +11,6 @@
 // @securityDefinitions.apikey ApiKeyAuth
 // @in header
 // @name Authorization
-
 package main
 
 import (
@@ -26,6 +25,7 @@ import (
 	_ "enterprise-erp/docs" // WAJIB ADA: Mengimpor hasil generate Swagger
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/swagger"
 )
@@ -36,6 +36,10 @@ func main() {
 
 	// 2. Inisialisasi Framework
 	app := fiber.New()
+
+	// === TAMBAHKAN BARIS INI UNTUK MEMBUKA PINTU CORS ===
+	app.Use(cors.New())
+	// ====================================================
 
 	// ==========================================
 	// [BARU] TAMENG API GATEWAY (RATE LIMITING)
