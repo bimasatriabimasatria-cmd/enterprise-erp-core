@@ -20,6 +20,7 @@ import (
 
 	"enterprise-erp/config"
 	"enterprise-erp/middlewares"
+
 	"enterprise-erp/routes" // Import jalur API kita
 
 	_ "enterprise-erp/docs" // WAJIB ADA: Mengimpor hasil generate Swagger
@@ -92,6 +93,7 @@ func main() {
 	routes.ManufacturingRoutes(app)
 	routes.FinanceRoutes(app)
 	routes.PortalRoutes(app)
+	routes.TransactionRoutes(app)
 
 	// 5. Menjalankan Server
 	port := os.Getenv("PORT")
