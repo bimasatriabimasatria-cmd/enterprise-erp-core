@@ -86,6 +86,7 @@ func ConnectDB() {
 		&models.BankStatement{},     // BARU: Modul Bank
 		&models.BankStatementLine{}, // BARU: Modul Bank
 		&models.Transaction{},
+		&models.Employee{},
 	)
 
 	if err != nil {
