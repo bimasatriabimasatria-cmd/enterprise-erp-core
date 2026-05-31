@@ -12,6 +12,9 @@ type Employee struct {
 	TenantID    string    `gorm:"type:uuid;not null;index"`
 	NIK         string    `gorm:"type:varchar(50);not null;uniqueIndex:idx_tenant_nik"` // Nomor Induk Karyawan
 	Name        string    `gorm:"type:varchar(255);not null"`
+	Role        string    `json:"role"`
+	Department  string    `json:"department"`
+	Status      string    `json:"status"`
 	Position    string    `gorm:"type:varchar(100);not null"`
 	BasicSalary float64   `gorm:"type:decimal(15,2);not null"` // Gaji Pokok Bulanan
 	HireDate    time.Time `gorm:"not null"`
