@@ -85,9 +85,9 @@ func ConnectDB() {
 		&models.ProductionOrder{},   // BARU
 		&models.BankStatement{},     // BARU: Modul Bank
 		&models.BankStatementLine{}, // BARU: Modul Bank
-		&models.Transaction{}
+		&models.Transaction{},
 	)
-	
+
 	if err != nil {
 		log.Fatal("Gagal melakukan migrasi database! Error: ", err)
 	}
