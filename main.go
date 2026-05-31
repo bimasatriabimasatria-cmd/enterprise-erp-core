@@ -98,7 +98,7 @@ func main() {
 	// 5. Menjalankan Server
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "3000"
+		port = "7860"
 	}
 
 	log.Printf("Server ERP berjalan di http://localhost:%s", port)

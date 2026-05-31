@@ -26,7 +26,7 @@ WORKDIR /app
 COPY --from=builder /app/server .
 
 # Membuka port 3000 agar bisa diakses
-EXPOSE 3000
+EXPOSE 7860
 
 # Perintah untuk menyalakan mesin
 CMD ["./server"]
