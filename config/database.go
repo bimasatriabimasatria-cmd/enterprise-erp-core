@@ -46,7 +46,7 @@ func ConnectDB() {
 	}
 
 	// UBAH BAGIAN INI MENJADI postgres.New() dengan PreferSimpleProtocol
-	DB, err = gorm.Open(postgres.New(postgres.Config{
+	db, err := gorm.Open(postgres.New(postgres.Config{
 		DSN:                  dsn,
 		PreferSimpleProtocol: true, // 👈 INI KUNCI RAHASIANYA! Mematikan prepared statement
 	}), &gorm.Config{})
