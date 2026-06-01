@@ -45,7 +45,12 @@ func ConnectDB() {
 		dsn = "host=localhost user=postgres password=admin123 dbname=erp_yd port=5432 sslmode=disable TimeZone=Asia/Jakarta"
 	}
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	// UBAH BAGIAN INI MENJADI postgres.New() dengan PreferSimpleProtocol
+	DB, err = gorm.Open(postgres.New(postgres.Config{
+		DSN:                  dsn,
+		PreferSimpleProtocol: true, // 👈 INI KUNCI RAHASIANYA! Mematikan prepared statement
+	}), &gorm.Config{})
+
 	if err != nil {
 		log.Fatal("Gagal terhubung ke database! \n", err)
 	}
