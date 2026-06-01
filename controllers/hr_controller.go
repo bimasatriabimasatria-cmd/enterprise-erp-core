@@ -7,6 +7,7 @@ import (
 	"enterprise-erp/models"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // --- BAGIAN KARYAWAN ---
@@ -19,32 +20,28 @@ type EmployeeInput struct {
 }
 
 func CreateEmployee(c *fiber.Ctx) error {
-	tenantID := c.Locals("tenant_id").(string)
-
-	var input EmployeeInput
-	if err := c.BodyParser(&input); err != nil {
+	var employee models.Employee
+	if err := c.BodyParser(&employee); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Format data tidak valid"})
 	}
 
-	parsedDate, err := time.Parse("2006-01-02", input.HireDate)
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Format tanggal salah"})
-	}
+	// 1. Ekstrak Token JWT dari Satpam (Middleware)
+	user := c.Locals("user").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
 
-	employee := models.Employee{
-		TenantID:    tenantID,
-		NIK:         input.NIK,
-		Name:        input.Name,
-		Position:    input.Position,
-		BasicSalary: input.BasicSalary,
-		HireDate:    parsedDate,
-	}
+	// 2. Tempelkan TenantID ke data karyawan baru
+	employee.TenantID = claims["tenant_id"].(string)
 
+	// 3. Simpan ke Database
 	if err := config.DB.Create(&employee).Error; err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Gagal menyimpan data Karyawan (NIK mungkin sudah dipakai)"})
+		// PENTING: Kita kirimkan err.Error() agar React tahu alasan pasti PostgreSQL menolak!
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.Status(201).JSON(fiber.Map{"message": "Karyawan berhasil didaftarkan", "data": employee})
+	return c.JSON(fiber.Map{
+		"message": "Karyawan berhasil ditambahkan!",
+		"data":    employee,
+	})
 }
 
 func GetEmployees(c *fiber.Ctx) error {

@@ -2,16 +2,14 @@ package routes
 
 import (
 	"enterprise-erp/controllers"
-	"enterprise-erp/middlewares"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func HRRoutes(app *fiber.App) {
-	api := app.Group("/api/hr", middlewares.Protected())
+func HRRoutes(router fiber.Router) {
+	// Pintu masuknya kita ubah menjadi /hr/employees
+	hrGroup := router.Group("/hr/employees")
 
-	api.Post("/employees", controllers.CreateEmployee)
-	api.Get("/employees", controllers.GetEmployees)
-
-	api.Post("/payroll", controllers.ProcessPayroll)
+	hrGroup.Get("/", controllers.GetEmployees)
+	hrGroup.Post("/", controllers.CreateEmployee)
 }
