@@ -165,3 +165,38 @@ func ProcessPayroll(c *fiber.Ctx) error {
 		"net_pay": netPay,
 	})
 }
+
+// --- 3. EDIT / UPDATE KARYAWAN ---
+func UpdateEmployee(c *fiber.Ctx) error {
+	tenantID := c.Locals("tenant_id").(string)
+	empID := c.Params("id")
+
+	// Kita pakai map agar GORM otomatis mencocokkan ke kolom database
+	var input map[string]interface{}
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Format data tidak valid"})
+	}
+
+	// Jika React mengirim base_salary, kita copy juga ke basic_salary agar DB aman
+	if base, ok := input["base_salary"]; ok {
+		input["basic_salary"] = base
+	}
+
+	if err := config.DB.Model(&models.Employee{}).Where("id = ? AND tenant_id = ?", empID, tenantID).Updates(input).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Gagal memperbarui data karyawan"})
+	}
+
+	return c.JSON(fiber.Map{"message": "Data karyawan berhasil diperbarui!"})
+}
+
+// --- 4. HAPUS KARYAWAN ---
+func DeleteEmployee(c *fiber.Ctx) error {
+	tenantID := c.Locals("tenant_id").(string)
+	empID := c.Params("id")
+
+	if err := config.DB.Where("id = ? AND tenant_id = ?", empID, tenantID).Delete(&models.Employee{}).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Gagal menghapus karyawan"})
+	}
+
+	return c.JSON(fiber.Map{"message": "Karyawan berhasil dihapus secara permanen!"})
+}

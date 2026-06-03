@@ -14,4 +14,6 @@ func HRRoutes(app *fiber.App) {
 	api.Get("/employees", controllers.GetEmployees)
 	api.Post("/employees", controllers.CreateEmployee)
 	api.Post("/payroll", controllers.ProcessPayroll)
+	api.Put("/employees/:id", controllers.UpdateEmployee)
+	api.Delete("/employees/:id", controllers.DeleteEmployee)
 }
