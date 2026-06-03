@@ -8,14 +8,10 @@ import (
 )
 
 func WarehouseRoutes(app *fiber.App) {
-	api := app.Group("/api/warehouses", middlewares.Protected())
+	api := app.Group("/api/warehouse", middlewares.Protected())
 
-	// Master Gudang
-	api.Post("/", controllers.CreateWarehouse)
-	api.Get("/", controllers.GetWarehouses)
+	// Ini adalah rute yang dipanggil oleh tombol biru di React Anda!
+	api.Post("/", controllers.StockMovement)
 
-	// Inventaris dan Mutasi
-	api.Post("/inventory", controllers.SetInventory)
-	api.Get("/inventory", controllers.GetInventory)
-	api.Post("/transfer", controllers.TransferStock)
+	// (Jika nanti Anda butuh rute lain, tambahkan di bawah sini)
 }

@@ -176,3 +176,55 @@ func GetInventory(c *fiber.Ctx) error {
 	config.DB.Where("tenant_id = ?", tenantID).Preload("Warehouse").Preload("Item").Find(&inventories)
 	return c.JSON(fiber.Map{"data": inventories})
 }
+
+// 6. Mutasi Barang Masuk/Keluar Sederhana (Dari Frontend React)
+type StockMovementInput struct {
+	ItemID       string `json:"item_id"`
+	MovementType string `json:"movement_type"` // "IN" atau "OUT"
+	Quantity     int    `json:"quantity"`
+}
+
+func StockMovement(c *fiber.Ctx) error {
+	tenantID := c.Locals("tenant_id").(string)
+	var input StockMovementInput
+
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Format data tidak valid"})
+	}
+
+	tx := config.DB.Begin()
+
+	// Cari barang berdasarkan ID
+	var item models.Item
+	if err := tx.Where("tenant_id = ? AND id = ?", tenantID, input.ItemID).First(&item).Error; err != nil {
+		tx.Rollback()
+		return c.Status(404).JSON(fiber.Map{"error": "Barang tidak ditemukan di database"})
+	}
+
+	// Lakukan penambahan atau pengurangan stok
+	if input.MovementType == "IN" {
+		item.Stock += input.Quantity
+	} else if input.MovementType == "OUT" {
+		if item.Stock < input.Quantity {
+			tx.Rollback()
+			return c.Status(400).JSON(fiber.Map{"error": "Stok tidak mencukupi untuk dikeluarkan!"})
+		}
+		item.Stock -= input.Quantity
+	} else {
+		tx.Rollback()
+		return c.Status(400).JSON(fiber.Map{"error": "Jenis pergerakan tidak dikenali"})
+	}
+
+	// Simpan perubahan stok ke master data
+	if err := tx.Save(&item).Error; err != nil {
+		tx.Rollback()
+		return c.Status(500).JSON(fiber.Map{"error": "Gagal mengupdate stok master"})
+	}
+
+	tx.Commit()
+
+	return c.Status(200).JSON(fiber.Map{
+		"message":   "Transaksi Gudang Berhasil diproses",
+		"new_stock": item.Stock,
+	})
+}
