@@ -7,7 +7,6 @@ import (
 	"enterprise-erp/models"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 // --- BAGIAN KARYAWAN ---
@@ -21,24 +20,29 @@ type EmployeeInput struct {
 
 func CreateEmployee(c *fiber.Ctx) error {
 	var employee models.Employee
+
+	// 1. Tangkap data dari React
 	if err := c.BodyParser(&employee); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Format data tidak valid"})
 	}
 
-	// 1. Ekstrak Token JWT dari Satpam (Middleware)
-	user := c.Locals("user").(*jwt.Token)
-	claims := user.Claims.(jwt.MapClaims)
+	// 2. [PERBAIKAN PANIC]
+	// Ambil tenant_id langsung dari Locals (Sesuai dengan auth_middleware.go Anda)
+	tenantID, ok := c.Locals("tenant_id").(string)
+	if !ok {
+		return c.Status(500).JSON(fiber.Map{"error": "Gagal membaca ID Perusahaan dari sistem"})
+	}
 
-	// 2. Tempelkan TenantID ke data karyawan baru
-	employee.TenantID = claims["tenant_id"].(string)
+	employee.TenantID = tenantID
 
 	// 3. Simpan ke Database
 	if err := config.DB.Create(&employee).Error; err != nil {
-		// PENTING: Kita kirimkan err.Error() agar React tahu alasan pasti PostgreSQL menolak!
+		// Tampilkan pesan asli dari PostgreSQL jika gagal
 		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	return c.JSON(fiber.Map{
+	// 4. Sukses
+	return c.Status(201).JSON(fiber.Map{
 		"message": "Karyawan berhasil ditambahkan!",
 		"data":    employee,
 	})
