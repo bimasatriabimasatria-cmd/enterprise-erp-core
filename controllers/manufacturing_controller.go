@@ -95,14 +95,13 @@ func CreateProductionOrder(c *fiber.Ctx) error {
 	return c.Status(201).JSON(fiber.Map{"message": "Perintah Produksi diterbitkan", "data": po})
 }
 
-// --- 3. SELESAIKAN PRODUKSI (POTONG BAHAN BAKU, JADIKAN BARANG BARU) ---
+// --- 3. SELESAIKAN PRODUKSI (MENGGUNAKAN STOK GLOBAL) ---
 func CompleteProduction(c *fiber.Ctx) error {
 	tenantID := c.Locals("tenant_id").(string)
 	orderID := c.Params("id")
 
 	tx := config.DB.Begin()
 
-	// 1. Cari Perintah Produksinya
 	var order models.ProductionOrder
 	if err := tx.Preload("BOM").Preload("BOM.Components").Where("id = ? AND tenant_id = ?", orderID, tenantID).First(&order).Error; err != nil {
 		tx.Rollback()
@@ -114,45 +113,33 @@ func CompleteProduction(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Produksi ini sudah diselesaikan sebelumnya!"})
 	}
 
-	// 2. Loop setiap bahan mentah, kalikan dengan target produksi, dan potong stoknya
+	// 1. Potong Stok Bahan Baku Global (Tabel Items)
 	for _, comp := range order.BOM.Components {
 		totalNeeded := comp.Quantity * order.TargetQuantity
 
-		var inv models.Inventory
-		if err := tx.Where("tenant_id = ? AND warehouse_id = ? AND item_id = ?", tenantID, order.WarehouseID, comp.MaterialID).First(&inv).Error; err != nil {
+		var item models.Item
+		if err := tx.Where("tenant_id = ? AND id = ?", tenantID, comp.MaterialID).First(&item).Error; err != nil {
 			tx.Rollback()
-			return c.Status(400).JSON(fiber.Map{"error": "Bahan baku tidak ditemukan di gudang pabrik!"})
+			return c.Status(400).JSON(fiber.Map{"error": "Bahan baku tidak ditemukan di Master Barang!"})
 		}
 
-		if inv.Quantity < totalNeeded {
+		if item.Stock < totalNeeded {
 			tx.Rollback()
 			return c.Status(400).JSON(fiber.Map{"error": "Stok bahan baku tidak mencukupi untuk produksi!"})
 		}
 
-		// Potong Bahan Mentah
-		inv.Quantity -= totalNeeded
-		tx.Save(&inv)
+		item.Stock -= totalNeeded
+		tx.Save(&item) // Simpan pemotongan stok
 	}
 
-	// 3. Tambahkan Barang Jadi (Finished Good) ke dalam Gudang
-	var fgInv models.Inventory
-	err := tx.Where("tenant_id = ? AND warehouse_id = ? AND item_id = ?", tenantID, order.WarehouseID, order.BOM.ItemID).First(&fgInv).Error
-	if err != nil {
-		// Jika belum pernah ada barang jadi ini di gudang, buat data baru
-		fgInv = models.Inventory{
-			TenantID:    tenantID,
-			WarehouseID: order.WarehouseID,
-			ItemID:      order.BOM.ItemID,
-			Quantity:    order.TargetQuantity,
-		}
-		tx.Create(&fgInv)
-	} else {
-		// Jika sudah ada, tambahkan stoknya
-		fgInv.Quantity += order.TargetQuantity
-		tx.Save(&fgInv)
+	// 2. Tambah Stok Barang Jadi Global (Tabel Items)
+	var fgItem models.Item
+	if err := tx.Where("tenant_id = ? AND id = ?", tenantID, order.BOM.ItemID).First(&fgItem).Error; err == nil {
+		fgItem.Stock += order.TargetQuantity
+		tx.Save(&fgItem)
 	}
 
-	// 4. Ubah status produksi selesai
+	// 3. Ubah status produksi selesai
 	order.Status = "completed"
 	tx.Save(&order)
 
@@ -175,4 +162,27 @@ func GetProductionOrders(c *fiber.Ctx) error {
 	var orders []models.ProductionOrder
 	config.DB.Where("tenant_id = ?", tenantID).Order("start_date desc").Find(&orders)
 	return c.JSON(fiber.Map{"data": orders})
+}
+
+// --- 6. HAPUS RESEP (BOM) ---
+func DeleteBOM(c *fiber.Ctx) error {
+	tenantID := c.Locals("tenant_id").(string)
+	bomID := c.Params("id")
+
+	tx := config.DB.Begin()
+
+	// Hapus komponen anak-anaknya dulu (Relasi)
+	if err := tx.Where("bom_id = ?", bomID).Delete(&models.BOMComponent{}).Error; err != nil {
+		tx.Rollback()
+		return c.Status(500).JSON(fiber.Map{"error": "Gagal menghapus komponen resep"})
+	}
+
+	// Hapus resep induknya
+	if err := tx.Where("id = ? AND tenant_id = ?", bomID, tenantID).Delete(&models.BillOfMaterial{}).Error; err != nil {
+		tx.Rollback()
+		return c.Status(500).JSON(fiber.Map{"error": "Gagal menghapus resep BOM"})
+	}
+
+	tx.Commit()
+	return c.JSON(fiber.Map{"message": "Resep berhasil dihapus!"})
 }

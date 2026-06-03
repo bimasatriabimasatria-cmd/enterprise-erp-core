@@ -13,6 +13,7 @@ func ManufacturingRoutes(app *fiber.App) {
 	// Resep BOM
 	api.Post("/bom", controllers.CreateBOM)
 	api.Get("/bom", controllers.GetBOMs) // <--- TAMBAHAN MATA BOM
+	api.Delete("/bom/:id", controllers.DeleteBOM)
 
 	// Perintah Produksi
 	api.Post("/orders", controllers.CreateProductionOrder)
