@@ -19,33 +19,33 @@ type EmployeeInput struct {
 }
 
 func CreateEmployee(c *fiber.Ctx) error {
-	var employee models.Employee
+	tenantID := c.Locals("tenant_id").(string)
 
-	// 1. Tangkap data dari React
-	if err := c.BodyParser(&employee); err != nil {
+	var input EmployeeInput
+	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Format data tidak valid"})
 	}
 
-	// 2. [PERBAIKAN PANIC]
-	// Ambil tenant_id langsung dari Locals (Sesuai dengan auth_middleware.go Anda)
-	tenantID, ok := c.Locals("tenant_id").(string)
-	if !ok {
-		return c.Status(500).JSON(fiber.Map{"error": "Gagal membaca ID Perusahaan dari sistem"})
+	parsedDate, err := time.Parse("2006-01-02", input.HireDate)
+	if err != nil {
+		parsedDate = time.Now() // Fallback aman jika format tanggal kosong/salah
 	}
 
-	employee.TenantID = tenantID
+	// PERBAIKAN MUTLAK: Memasukkan BasicSalary ke dalam model sebelum di-save ke Database!
+	employee := models.Employee{
+		TenantID:    tenantID,
+		NIK:         input.NIK,
+		Name:        input.Name,
+		Position:    input.Position,
+		BasicSalary: input.BasicSalary, // <--- INI BARIS YANG TERLUPAKAN DI KODE ASLI ANDA!
+		HireDate:    parsedDate,
+	}
 
-	// 3. Simpan ke Database
 	if err := config.DB.Create(&employee).Error; err != nil {
-		// Tampilkan pesan asli dari PostgreSQL jika gagal
-		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+		return c.Status(500).JSON(fiber.Map{"error": "Gagal menyimpan data Karyawan (NIK mungkin sudah dipakai)"})
 	}
 
-	// 4. Sukses
-	return c.Status(201).JSON(fiber.Map{
-		"message": "Karyawan berhasil ditambahkan!",
-		"data":    employee,
-	})
+	return c.Status(201).JSON(fiber.Map{"message": "Karyawan berhasil didaftarkan", "data": employee})
 }
 
 func GetEmployees(c *fiber.Ctx) error {
