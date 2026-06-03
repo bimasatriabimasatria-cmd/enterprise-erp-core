@@ -171,18 +171,27 @@ func UpdateEmployee(c *fiber.Ctx) error {
 	tenantID := c.Locals("tenant_id").(string)
 	empID := c.Params("id")
 
-	// Kita pakai map agar GORM otomatis mencocokkan ke kolom database
-	var input map[string]interface{}
+	// Kita tangkap data menggunakan struktur asli bawaan sistem
+	var input EmployeeInput
 	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Format data tidak valid"})
 	}
 
-	// Jika React mengirim base_salary, kita copy juga ke basic_salary agar DB aman
-	if base, ok := input["base_salary"]; ok {
-		input["basic_salary"] = base
+	// TAKTIK SNIPER: Kita paksa GORM untuk HANYA meng-update kolom yang benar-benar ada di Database!
+	updateData := map[string]interface{}{
+		"nik":          input.NIK,
+		"name":         input.Name,
+		"position":     input.Position,
+		"basic_salary": input.BasicSalary, // <-- Ini kunci utamanya!
 	}
 
-	if err := config.DB.Model(&models.Employee{}).Where("id = ? AND tenant_id = ?", empID, tenantID).Updates(input).Error; err != nil {
+	// Update tanggal hanya jika dikirim
+	if input.HireDate != "" {
+		parsedDate, _ := time.Parse("2006-01-02", input.HireDate)
+		updateData["hire_date"] = parsedDate
+	}
+
+	if err := config.DB.Model(&models.Employee{}).Where("id = ? AND tenant_id = ?", empID, tenantID).Updates(updateData).Error; err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Gagal memperbarui data karyawan"})
 	}
 
