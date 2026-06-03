@@ -160,3 +160,19 @@ func CompleteProduction(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{"message": "PRODUKSI SELESAI! Bahan baku dipotong, Barang Jadi telah masuk ke Gudang."})
 }
+
+// --- 4. LIHAT DAFTAR RESEP (BOM) ---
+func GetBOMs(c *fiber.Ctx) error {
+	tenantID := c.Locals("tenant_id").(string)
+	var boms []models.BillOfMaterial
+	config.DB.Where("tenant_id = ?", tenantID).Find(&boms)
+	return c.JSON(fiber.Map{"data": boms})
+}
+
+// --- 5. LIHAT DAFTAR PERINTAH PRODUKSI ---
+func GetProductionOrders(c *fiber.Ctx) error {
+	tenantID := c.Locals("tenant_id").(string)
+	var orders []models.ProductionOrder
+	config.DB.Where("tenant_id = ?", tenantID).Order("start_date desc").Find(&orders)
+	return c.JSON(fiber.Map{"data": orders})
+}

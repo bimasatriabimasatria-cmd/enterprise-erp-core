@@ -12,4 +12,5 @@ func WarehouseRoutes(app *fiber.App) {
 
 	// TAMBAHKAN KATA "/movement" DI SINI
 	api.Post("/movement", controllers.StockMovement)
+	api.Get("/", controllers.GetWarehouses)
 }
