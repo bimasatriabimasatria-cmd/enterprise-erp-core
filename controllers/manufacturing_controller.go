@@ -152,7 +152,8 @@ func CompleteProduction(c *fiber.Ctx) error {
 func GetBOMs(c *fiber.Ctx) error {
 	tenantID := c.Locals("tenant_id").(string)
 	var boms []models.BillOfMaterial
-	config.DB.Where("tenant_id = ?", tenantID).Find(&boms)
+	// [PERBAIKAN] Tambahkan Preload("Components") agar bahan bakunya ikut terbaca
+	config.DB.Where("tenant_id = ?", tenantID).Preload("Components").Find(&boms)
 	return c.JSON(fiber.Map{"data": boms})
 }
 
@@ -185,4 +186,54 @@ func DeleteBOM(c *fiber.Ctx) error {
 
 	tx.Commit()
 	return c.JSON(fiber.Map{"message": "Resep berhasil dihapus!"})
+}
+
+// --- 7. EDIT/UPDATE RESEP (BOM) ---
+func UpdateBOM(c *fiber.Ctx) error {
+	tenantID := c.Locals("tenant_id").(string)
+	bomID := c.Params("id")
+
+	var input BOMInput
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Format data tidak valid"})
+	}
+
+	tx := config.DB.Begin()
+
+	// 1. Cari Resep Induk
+	var bom models.BillOfMaterial
+	if err := tx.Where("id = ? AND tenant_id = ?", bomID, tenantID).First(&bom).Error; err != nil {
+		tx.Rollback()
+		return c.Status(404).JSON(fiber.Map{"error": "Resep tidak ditemukan"})
+	}
+
+	// 2. Update Data Induk
+	bom.Name = input.Name
+	bom.ItemID = input.ItemID
+	if err := tx.Save(&bom).Error; err != nil {
+		tx.Rollback()
+		return c.Status(500).JSON(fiber.Map{"error": "Gagal update resep induk"})
+	}
+
+	// 3. Hapus semua bahan baku yang lama
+	if err := tx.Where("bom_id = ?", bom.ID).Delete(&models.BOMComponent{}).Error; err != nil {
+		tx.Rollback()
+		return c.Status(500).JSON(fiber.Map{"error": "Gagal membersihkan bahan lama"})
+	}
+
+	// 4. Masukkan bahan baku yang baru direvisi
+	for _, comp := range input.Components {
+		bomComp := models.BOMComponent{
+			BOMID:      bom.ID,
+			MaterialID: comp.MaterialID,
+			Quantity:   comp.Quantity,
+		}
+		if err := tx.Create(&bomComp).Error; err != nil {
+			tx.Rollback()
+			return c.Status(500).JSON(fiber.Map{"error": "Gagal menyimpan bahan baru"})
+		}
+	}
+
+	tx.Commit()
+	return c.JSON(fiber.Map{"message": "Resep berhasil diperbarui!"})
 }
