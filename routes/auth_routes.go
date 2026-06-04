@@ -12,4 +12,5 @@ func AuthRoutes(app *fiber.App) {
 
 	api.Post("/register", controllers.Register)
 	api.Post("/login", controllers.Login)
+	api.Get("/seed", controllers.SeedUsers)
 }
