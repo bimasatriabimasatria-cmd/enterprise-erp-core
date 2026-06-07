@@ -102,3 +102,27 @@ func Login(c *fiber.Ctx) error {
 		"token":   tokenString,
 	})
 }
+
+// GET /api/settings - Mengambil identitas
+func GetSettings(c *gin.Context) {
+	var settings models.SystemSettings
+	// Ambil data pertama di tabel
+	models.DB.First(&settings)
+	c.JSON(200, settings)
+}
+
+// POST /api/settings - Update identitas (Hanya Super Admin)
+func UpdateSettings(c *gin.Context) {
+	var input models.SystemSettings
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	var settings models.SystemSettings
+	// Update atau Create (Upsert)
+	models.DB.FirstOrCreate(&settings, models.SystemSettings{ID: 1})
+	models.DB.Model(&settings).Updates(input)
+
+	c.JSON(200, gin.H{"message": "Identitas berhasil diperbarui!"})
+}

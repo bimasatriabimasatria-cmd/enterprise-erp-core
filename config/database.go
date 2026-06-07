@@ -92,6 +92,7 @@ func ConnectDB() {
 		&models.BankStatementLine{}, // BARU: Modul Bank
 		&models.Transaction{},
 		&models.Employee{},
+		&models.SystemSettings{},
 	)
 
 	if err != nil {
