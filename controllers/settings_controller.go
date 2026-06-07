@@ -3,9 +3,21 @@ package controllers
 import (
 	"enterprise-erp/config"
 	"enterprise-erp/models"
+	"log"
 
 	"github.com/gofiber/fiber/v2"
 )
+
+func GetSettings(c *fiber.Ctx) error {
+	// 📢 TAMBAHKAN LOG INI
+	log.Println("PINTU API /api/settings DITOK SEORANG PENGUNJUNG!")
+
+	var settings models.SystemSettings
+	if err := config.DB.First(&settings, 1).Error; err != nil {
+		return c.JSON(fiber.Map{"company_name": "ENTERPRISE", "logo": ""})
+	}
+	return c.JSON(settings)
+}
 
 func GetSettings(c *fiber.Ctx) error {
 	var settings models.SystemSettings
