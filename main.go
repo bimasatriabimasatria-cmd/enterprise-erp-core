@@ -75,7 +75,7 @@ func main() {
 
 	// Pendaftaran Semua Rute (Ganti 'app' menjadi 'apiGroup' kecuali Auth karena dia mendaftarkan API sendiri di dalamnya)
 	routes.AuthRoutes(app) // Auth tetap pakai app agar CCTV tidak merekam password salah berulang
-
+	routes.SettingsRoutes(app)
 	// 4. Inisialisasi Auth Routes
 	routes.ItemRoutes(app)
 	routes.AccountRoutes(app)
@@ -94,7 +94,7 @@ func main() {
 	routes.FinanceRoutes(app)
 	routes.PortalRoutes(app)
 	routes.TransactionRoutes(app)
-	routes.SettingsRoutes(app)
+	
 
 	// 5. Menjalankan Server
 	port := os.Getenv("PORT")
