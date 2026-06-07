@@ -9,16 +9,17 @@ import (
 
 func GetSettings(c *fiber.Ctx) error {
 	var settings models.SystemSettings
-	// Ambil data pertama. Jika belum ada, buat default.
-	if err := config.DB.FirstOrCreate(&settings, models.SystemSettings{ID: 1}).Error; err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Gagal akses database"})
+	// Ambil data pertama. Jika tabel kosong, kembalikan default.
+	if err := config.DB.First(&settings, 1).Error; err != nil {
+		// Jika belum ada data, beri response default tanpa error 404
+		return c.JSON(fiber.Map{"company_name": "ENTERPRISE", "logo": ""})
 	}
 	return c.JSON(settings)
 }
 
 func UpdateSettings(c *fiber.Ctx) error {
 	var input models.SystemSettings
-	if err := c.ShouldBindJSON(&input); err != nil {
+	if err := c.BodyParser(&input); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Data tidak valid"})
 	}
 
@@ -26,5 +27,5 @@ func UpdateSettings(c *fiber.Ctx) error {
 	config.DB.FirstOrCreate(&settings, models.SystemSettings{ID: 1})
 	config.DB.Model(&settings).Updates(input)
 
-	return c.JSON(fiber.Map{"message": "Identitas berhasil diperbarui di server!"})
+	return c.JSON(fiber.Map{"message": "Berhasil!"})
 }
