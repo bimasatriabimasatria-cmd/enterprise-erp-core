@@ -8,11 +8,7 @@ import (
 )
 
 func SettingsRoutes(app *fiber.App) {
-	api := app.Group("/api/settings")
-
-	// Siapapun bisa baca (untuk tampilan login & sidebar)
-	api.Get("/", controllers.GetSettings)
-
-	// HANYA Super Admin yang bisa edit
-	api.Post("/", middlewares.AuthMiddleware(), controllers.UpdateSettings)
+	// Gunakan app.Get langsung jika ingin menghindari masalah trailing slash
+	app.Get("/api/settings", controllers.GetSettings)
+	app.Post("/api/settings", middlewares.AuthMiddleware(), controllers.UpdateSettings)
 }
