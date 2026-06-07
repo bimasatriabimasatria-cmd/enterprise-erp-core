@@ -94,7 +94,6 @@ func main() {
 	routes.FinanceRoutes(app)
 	routes.PortalRoutes(app)
 	routes.TransactionRoutes(app)
-	
 
 	// 5. Menjalankan Server
 	port := os.Getenv("PORT")
