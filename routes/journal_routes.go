@@ -1,15 +1,20 @@
 package routes
 
 import (
-	"enterprise-erp/controllers"
-	"enterprise-erp/middlewares"
-
-	"github.com/gofiber/fiber/v2"
+	"enterprise-erp-core/controllers"
+	"enterprise-erp-core/middlewares"
+	"github.com/gin-gonic/gin"
 )
 
-func JournalRoutes(app *fiber.App) {
-	api := app.Group("/api/journals", middlewares.Protected())
-
-	api.Post("/", controllers.CreateJournal)
-	api.Get("/", controllers.GetJournals)
+// SetupJournalRoutes mengelola semua endpoint untuk modul FICO (Jurnal)
+func SetupJournalRoutes(r *gin.Engine) {
+	// Kita buat group "/api/v1/finance" untuk standar API modern
+	financeGroup := r.Group("/api/v1/finance")
+	
+	// Terapkan Middleware Keamanan (RBAC & RLS Mocking) untuk seluruh rute di grup ini
+	financeGroup.Use(middlewares.AuthMiddleware())
+	{
+		// Endpoint: POST /api/v1/finance/journals
+		financeGroup.POST("/journals", controllers.CreateJournal)
+	}
 }
