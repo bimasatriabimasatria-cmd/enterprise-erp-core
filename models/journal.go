@@ -1,34 +1,27 @@
 package models
 
-import (
-	"time"
+import "time"
 
-	"gorm.io/gorm"
-)
-
-// JournalEntry adalah Header Jurnal (Kapan transaksi terjadi dan apa buktinya)
+// JournalEntry adalah Header dari transaksi (Map/Amplop)
 type JournalEntry struct {
-	ID          string    `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	TenantID    string    `gorm:"type:uuid;not null;index"`
-	Reference   string    `gorm:"type:varchar(100);not null"` // Contoh: INV-2026-001
-	Date        time.Time `gorm:"not null"`
-	Description string    `gorm:"type:text"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   gorm.DeletedAt `gorm:"index"`
-
-	// Relasi ke baris-baris jurnal (Satu Header punya banyak Baris)
-	Lines []JournalLine `gorm:"foreignKey:JournalEntryID"`
+	ID              string        `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	TenantID        string        `gorm:"type:uuid;not null" json:"tenant_id"` // Kunci Multi-Tenant
+	EntryDate       time.Time     `gorm:"type:date;not null" json:"entry_date"`
+	ReferenceNumber string        `gorm:"type:varchar(100)" json:"reference_number"`
+	Description     string        `gorm:"type:text" json:"description"`
+	Status          string        `gorm:"type:varchar(20);default:'DRAFT'" json:"status"`
+	CreatedAt       time.Time     `json:"created_at"`
+	
+	// Relasi ke Journal Lines (1 Jurnal punya banyak baris Debit/Kredit)
+	Lines           []JournalLine `gorm:"foreignKey:JournalEntryID;constraint:OnDelete:CASCADE;" json:"lines"`
 }
 
-// JournalLine adalah Baris Detail Jurnal (Debit/Kredit per akun)
+// JournalLine adalah Detail Transaksi (Isi dari Amplop)
 type JournalLine struct {
-	ID             string  `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	JournalEntryID string  `gorm:"type:uuid;not null;index"`
-	AccountID      string  `gorm:"type:uuid;not null;index"`
-	Debit          float64 `gorm:"type:decimal(15,2);default:0"`
-	Credit         float64 `gorm:"type:decimal(15,2);default:0"`
-
-	// Relasi untuk menarik data nama akun nantinya
-	Account Account `gorm:"foreignKey:AccountID"`
+	ID             string  `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	JournalEntryID string  `gorm:"type:uuid;not null" json:"journal_entry_id"`
+	AccountID      string  `gorm:"type:uuid;not null" json:"account_id"`
+	Description    string  `gorm:"type:text" json:"description"`
+	Debit          float64 `gorm:"type:decimal(19,4);default:0.0000" json:"debit"`
+	Credit         float64 `gorm:"type:decimal(19,4);default:0.0000" json:"credit"`
 }
