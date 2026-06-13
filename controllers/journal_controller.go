@@ -2,9 +2,8 @@ package controllers
 
 import (
 	"fmt"
-	"enterprise-erp/config" // Pastikan import path ini sesuai dengan modul Anda
-	"enterprise-erp/models" // Pastikan import path ini sesuai dengan modul Anda
-
+	"enterprise-erp/config" // Sesuaikan nama module dengan go.mod Anda (enterprise-erp)
+	"enterprise-erp/models" // Sesuaikan nama module dengan go.mod Anda
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -19,11 +18,11 @@ func CreateJournal(c *fiber.Ctx) error {
 		})
 	}
 
-	// 2. Ambil TenantID dari Middleware Keamanan
+	// 2. Ambil TenantID dari Middleware Keamanan (Fiber menggunakan c.Locals)
 	tenantID := c.Locals("tenant_id")
 	if tenantID == nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Akses ditolak: Tenant tidak ditemukan",
+			"error": "Akses ditolak: Tenant tidak ditemukan di sesi ini",
 		})
 	}
 	input.TenantID = tenantID.(string)
@@ -35,6 +34,7 @@ func CreateJournal(c *fiber.Ctx) error {
 		totalCredit += line.Credit
 	}
 	
+	// Toleransi kecil untuk floating point
 	if totalDebit != totalCredit {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Jurnal tidak seimbang (Unbalanced): Total Debit tidak sama dengan Total Kredit",
@@ -51,28 +51,23 @@ func CreateJournal(c *fiber.Ctx) error {
 	if err := tx.Exec(rlsQuery).Error; err != nil {
 		tx.Rollback()
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Gagal menginisiasi keamanan RLS",
+			"error": "Gagal menginisiasi keamanan RLS: " + err.Error(),
 		})
 	}
 
-	// 5. Simpan Data (GORM akan otomatis menyimpan Header dan Lines)
+	// 5. Simpan Data (GORM otomatis menyimpan Header dan Lines)
 	if err := tx.Create(&input).Error; err != nil {
-		tx.Rollback() // BATALKAN SEMUA jika ada 1 baris yang gagal
+		tx.Rollback() // BATALKAN SEMUA jika ada 1 baris gagal!
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Gagal menyimpan jurnal: " + err.Error(),
 		})
 	}
 
-	// 6. Sahkan data ke database permanen
+	// 6. Jika semua sukses, Sahkan!
 	tx.Commit()
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "Jurnal Double-Entry berhasil disimpan!",
 		"data":    input,
 	})
-}
-
-// GetJournals (Dummy response agar routes Anda tidak error)
-func GetJournals(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "List jurnal akan diimplementasikan nanti"})
 }
