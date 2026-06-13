@@ -16,4 +16,5 @@ func JournalRoutes(app *fiber.App) {
 
 	// Endpoint untuk membuat jurnal baru
 	journalGroup.Post("/", controllers.CreateJournal)
+	journalGroup.Post("", controllers.CreateJournal)
 }
