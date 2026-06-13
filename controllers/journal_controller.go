@@ -2,27 +2,29 @@ package controllers
 
 import (
 	"fmt"
-	"net/http"
-	"enterprise-erp-core/config"
-	"enterprise-erp-core/models"
-	"github.com/gin-gonic/gin"
+	"enterprise-erp/config" // Pastikan import path ini sesuai dengan modul Anda
+	"enterprise-erp/models" // Pastikan import path ini sesuai dengan modul Anda
+
+	"github.com/gofiber/fiber/v2"
 )
 
 // CreateJournal menangani standar Double-Entry Bookkeeping
-func CreateJournal(c *gin.Context) {
+func CreateJournal(c *fiber.Ctx) error {
 	var input models.JournalEntry
 
 	// 1. Validasi Input JSON dari Frontend/API
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Format data tidak valid: " + err.Error()})
-		return
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Format data tidak valid: " + err.Error(),
+		})
 	}
 
 	// 2. Ambil TenantID dari Middleware Keamanan
-	tenantID, exists := c.Get("tenant_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Akses ditolak: Tenant tidak ditemukan"})
-		return
+	tenantID := c.Locals("tenant_id")
+	if tenantID == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Akses ditolak: Tenant tidak ditemukan",
+		})
 	}
 	input.TenantID = tenantID.(string)
 
@@ -32,10 +34,11 @@ func CreateJournal(c *gin.Context) {
 		totalDebit += line.Debit
 		totalCredit += line.Credit
 	}
-	// Toleransi kecil untuk floating point
+	
 	if totalDebit != totalCredit {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Jurnal tidak seimbang (Unbalanced): Total Debit tidak sama dengan Total Kredit"})
-		return
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Jurnal tidak seimbang (Unbalanced): Total Debit tidak sama dengan Total Kredit",
+		})
 	}
 
 	// ==========================================
@@ -44,26 +47,32 @@ func CreateJournal(c *gin.Context) {
 	tx := config.DB.Begin() // Memulai Transaksi Database
 
 	// [PENTING] Menyuntikkan identitas Tenant ke Postgres untuk melewati RLS
-	// Ini akan dibaca oleh fungsi `public.get_jwt_tenant_id()` yang kita buat di SQL
 	rlsQuery := fmt.Sprintf(`SET LOCAL "request.jwt.claims" = '{"tenant_id": "%s"}'`, input.TenantID)
 	if err := tx.Exec(rlsQuery).Error; err != nil {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menginisiasi keamanan RLS"})
-		return
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Gagal menginisiasi keamanan RLS",
+		})
 	}
 
-	// 5. Simpan Data (GORM akan otomatis menyimpan Header dan Lines karena kita sudah atur relasinya di struct)
+	// 5. Simpan Data (GORM akan otomatis menyimpan Header dan Lines)
 	if err := tx.Create(&input).Error; err != nil {
-		tx.Rollback() // Jika ada 1 saja yang gagal (misal: AccountID tidak ada), BATALKAN SEMUA!
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan jurnal: " + err.Error()})
-		return
+		tx.Rollback() // BATALKAN SEMUA jika ada 1 baris yang gagal
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Gagal menyimpan jurnal: " + err.Error(),
+		})
 	}
 
-	// 6. Jika semua sukses, baru kita "Sahkan" datanya ke database permanen
+	// 6. Sahkan data ke database permanen
 	tx.Commit()
 
-	c.JSON(http.StatusCreated, gin.H{
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "Jurnal Double-Entry berhasil disimpan!",
 		"data":    input,
 	})
+}
+
+// GetJournals (Dummy response agar routes Anda tidak error)
+func GetJournals(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{"message": "List jurnal akan diimplementasikan nanti"})
 }
